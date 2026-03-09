@@ -1,18 +1,125 @@
-<!--
-GitHub Pages bootstrap for Lightning Out 2.0 (GA) to render an LWC directly, without Aura and without Experience Cloud.
-Replace the placeholders:
-  - ORG_DOMAIN: your Enhanced Domain that serves lightning.out.js (e.g., https://mydomain.my.salesforce.com)
-  - COMPONENT_NAME: the LWC to mount ("c/ghPublicDemo")
-Security prerequisites in Salesforce Setup (org-side):
-  1) CORS Allowed Origins: https://<username>.github.io and/or https://<username>.github.io/<repo>
-  2) CSP Trusted Sites (script): same as above
-  3) If your org has specific Lightning Out allowed origins control, add the GitHub Pages origin there as well
-Note: This POC renders a static UI LWC. Do not expose sensitive data. 
--->
 <!doctype html>
-<html lang="en">
-<script type="text/javascript" async="" src="https://creative-hawk-1ofvq9-dev-ed.trailblaze.my.salesforce.com/lightning/lightning.out.latest/index.iife.prod.js"></script>
-<lightning-out-application components="c-gh-public-demo"></lightning-out-application>
-  <c-gh-public-demo></c-gh-public-demo>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Lightning Out Demo - LWC outside Salesforce (GitHub Pages Ready)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2rem; }
+    #status { margin-bottom: 1rem; color: #555; }
+    #container { border: 1px solid #ddd; padding: 16px; border-radius: 8px; }
+    .btn { padding: 8px 14px; border: 1px solid #888; background: #f8f8f8; border-radius: 4px; cursor: pointer; }
+    .btn:hover { background: #eee; }
+    code { background: #f4f4f4; padding: 0 4px; border-radius: 3px; }
+  </style>
+
+  <script>
+    // ===== Configure these before testing on GitHub Pages =====
+    // Your My Domain:
+    const SF_DOMAIN = 'https://orgfarm-317b5bd502-dev-ed.my.salesforce.com';
+
+    // Connected App Consumer Key:
+    const CLIENT_ID = 'YOUR_CONNECTED_APP_CLIENT_ID';
+
+    // After you publish to GitHub Pages, set this to the exact HTTPS URL of this file.
+    // Example: 'https://your-username.github.io/lightning-out-demo/index.html'
+    const REDIRECT_URI = 'https://your-username.github.io/lightning-out-demo/index.html';
+
+    // OAuth 2.0 implicit flow for demo purposes (prod: use Auth Code + PKCE)
+    const AUTH_URL = `${SF_DOMAIN}/services/oauth2/authorize?response_type=token&client_id=${encodeURIComponent(CLIENT_ID)}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
+
+    function getAccessTokenFromHash() {
+      if (window.location.hash && window.location.hash.includes('access_token=')) {
+        const params = new URLSearchParams(window.location.hash.substring(1));
+        return params.get('access_token');
+      }
+      return null;
+    }
+
+    function login() {
+      if (!CLIENT_ID || CLIENT_ID.includes('YOUR_CONNECTED_APP_CLIENT_ID')) {
+        alert('Please set CLIENT_ID to your Connected App Consumer Key.');
+        return;
+      }
+      if (!REDIRECT_URI.startsWith('https://')) {
+        alert('REDIRECT_URI must be HTTPS. Update it to your GitHub Pages URL.');
+        return;
+      }
+      window.location.href = AUTH_URL;
+    }
+
+    function showStatus(msg) {
+      const el = document.getElementById('status');
+      if (el) el.textContent = msg;
+    }
+  </script>
+
+  <!-- Load Lightning Out runtime from your org (domain must match SF_DOMAIN) -->
+  <script src="https://orgfarm-317b5bd502-dev-ed.my.salesforce.com/lightning/lightning.out.js"></script>
+</head>
+<body>
+  <h1>Lightning Out Demo (GitHub Pages)</h1>
+  <div id="status">Initializing…</div>
+  <button id="loginBtn" class="btn" onclick="login()">Login to Salesforce</button>
+  <div id="container" class="slds-p-around_medium"></div>
+
+  <script>
+    (function init() {
+      const token = getAccessTokenFromHash();
+      if (!token) {
+        showStatus('Not authenticated. Click "Login to Salesforce" to continue.');
+        return;
+      }
+
+      showStatus('Authenticated. Bootstrapping Lightning Out…');
+      const loginBtn = document.getElementById('loginBtn');
+      if (loginBtn) loginBtn.style.display = 'none';
+
+      $Lightning.use(
+        'c:helloWorldOutApp',
+        function () {
+          showStatus('Lightning Out initialized. Creating component…');
+          $Lightning.createComponent(
+            'c:helloWorld',
+            {},
+            'container',
+            function () {
+              showStatus('LWC rendered successfully.');
+            }
+          );
+        },
+        SF_DOMAIN,
+        token
+      );
+    })();
+  </script>
+
+  <hr />
+  <section>
+    <h2>How to publish on GitHub Pages</h2>
+    <ol>
+      <li>Create a new public repo (e.g., <code>lightning-out-demo</code>) on GitHub.</li>
+      <li>Place this file at the repo root and name it <code>index.html</code> (you can copy from this host/index.html).</li>
+      <li>Commit & push to the <code>main</code> branch.</li>
+      <li>Repo Settings > Pages:
+        <ul>
+          <li>Source: "Deploy from a branch"</li>
+          <li>Branch: <code>main</code> (root)</li>
+        </ul>
+      </li>
+      <li>After Pages is active, note the URL: <code>https://your-username.github.io/lightning-out-demo/</code></li>
+      <li>Set your Connected App Callback URL to the full page URL:
+        <br /><code>https://your-username.github.io/lightning-out-demo/index.html</code></li>
+      <li>In this file, set:
+        <ul>
+          <li><code>CLIENT_ID</code> to your Connected App Consumer Key</li>
+          <li><code>REDIRECT_URI</code> to your Pages URL (exactly the same as Callback URL)</li>
+          <li>Keep <code>SF_DOMAIN</code> as your My Domain URL</li>
+        </ul>
+      </li>
+      <li>Commit & push the updated <code>index.html</code>.</li>
+      <li>Open your Pages URL, click "Login to Salesforce", finish OAuth, and the LWC will render.</li>
+    </ol>
+  </section>
 </body>
 </html>
