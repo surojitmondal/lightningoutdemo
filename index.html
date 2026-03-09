@@ -23,16 +23,19 @@
 
     // After you publish to GitHub Pages, set this to the exact HTTPS URL of this file.
     // Example: 'https://your-username.github.io/lightning-out-demo/index.html'
-    const REDIRECT_URI = 'https://surojitmondal.github.io/lightning-out-demo/';
+    const REDIRECT_URI = 'https://surojitmondal.github.io/lightningoutdemo/index.html';
 
     // OAuth 2.0 implicit flow for demo purposes (prod: use Auth Code + PKCE)
     const AUTH_URL = `${SF_DOMAIN}/services/oauth2/authorize?response_type=token&client_id=${encodeURIComponent(CLIENT_ID)}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
 
     function getAccessTokenFromHash() {
+        console.log('Checking URL hash for access token...');
       if (window.location.hash && window.location.hash.includes('access_token=')) {
         const params = new URLSearchParams(window.location.hash.substring(1));
+        console.log('Checking URL hash for access token...::'+params.get('access_token'));
         return params.get('access_token');
       }
+        console.log('Checking URL hash for access token is NULL');
       return null;
     }
 
